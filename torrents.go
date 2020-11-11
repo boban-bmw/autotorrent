@@ -9,7 +9,7 @@ import (
 )
 
 type singleFileTorrentInfo struct {
-	Length      int
+	Length      int64
 	Name        string
 	PieceLength int    `bencode:"piece length"`
 	PiecesRaw   string `bencode:"pieces"`
@@ -22,7 +22,7 @@ type singleFileTorrent struct {
 }
 
 type torrentFile struct {
-	Length int
+	Length int64
 	Path   []string
 }
 
