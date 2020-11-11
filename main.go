@@ -1,8 +1,10 @@
 package main
 
 import (
+	"autotorrent/clients"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,9 +13,14 @@ import (
 )
 
 var opts struct {
-	Torrents  string `short:"t" long:"torrents" description:"Path to directory with .torrent files, relative to current directory" default:"."`
-	Downloads string `short:"d" long:"downloads" description:"Path to downloads directory, relative to current directory" default:"."`
-	Links     string `short:"l" long:"links" description:"Path to links directory, relative to current directory" required:"true"`
+	Torrents       string `short:"t" long:"torrents" description:"Path to directory with .torrent files, relative to current directory" default:"."`
+	Downloads      string `short:"d" long:"downloads" description:"Path to downloads directory, relative to current directory" default:"."`
+	Links          string `short:"l" long:"links" description:"Path to links directory, relative to current directory" required:"true"`
+	ClientUsername string `short:"u" long:"username" description:"Torrent client username" required:"true"`
+	ClientPassword string `short:"p" long:"password" description:"Torrent client password" required:"true"`
+	ClientURL      string `long:"url" description:"Torrent client URL" required:"true"`
+	ClientCategory string `short:"c" long:"category" description:"Category for the added torrent" required:"true"`
+	ClientID       string `short:"i" long:"client" description:"Id of the torrent client" required:"true" choice:"qbt"`
 }
 
 func main() {
@@ -21,6 +28,23 @@ func main() {
 	if err != nil {
 		log.Fatalln("Couldn't parse flags", err)
 	}
+
+	clientURL, err := url.Parse(opts.ClientURL)
+	if err != nil {
+		log.Fatalln("Couldn't parse client URL", err)
+	}
+
+	client, err := clients.GetClient(clients.ClientConfig{
+		Username: opts.ClientUsername,
+		Password: opts.ClientPassword,
+		URL:      *clientURL,
+		Category: opts.ClientCategory,
+	}, opts.ClientID)
+	if err != nil {
+		log.Fatalln("Couldn't connect to client", err)
+	}
+
+	log.Println(client)
 
 	cwd, err := os.Getwd()
 	if err != nil {
