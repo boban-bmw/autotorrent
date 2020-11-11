@@ -44,8 +44,6 @@ func main() {
 		log.Fatalln("Couldn't connect to client", err)
 	}
 
-	log.Println(client)
-
 	cwd, err := os.Getwd()
 	if err != nil {
 		log.Fatalln("Couldn't get current working directory", err)
@@ -72,6 +70,13 @@ func main() {
 
 	torrents := parseTorrents(fileNames)
 	downloads := parseDownloads(downloadsDir)
+
+	existingTorrents, err := client.GetTorrentList()
+	if err != nil {
+		log.Fatalln("Couldn't get list of existing torrents", err)
+	}
+
+	log.Println(existingTorrents)
 
 	for _, torrent := range torrents {
 		// TODO: check if torrent is already added in client

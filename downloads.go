@@ -20,10 +20,12 @@ func parseDownloads(path string) []node {
 			return nil
 		}
 
-		downloads = append(downloads, node{
-			info: info,
-			path: path,
-		})
+		if !info.IsDir() {
+			downloads = append(downloads, node{
+				info: info,
+				path: path,
+			})
+		}
 
 		return nil
 	})
