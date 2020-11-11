@@ -9,7 +9,7 @@ import (
 	"github.com/agnivade/levenshtein"
 )
 
-func handleSingleFileTorrent(torrent *singleFileTorrent, downloads []node, links string) {
+func handleSingleFileTorrent(torrent *singleFileTorrent, downloads []node, links string) bool {
 	torrentSize := torrent.Info.Length
 
 	matchingFiles := make([]node, 0)
@@ -23,7 +23,7 @@ func handleSingleFileTorrent(torrent *singleFileTorrent, downloads []node, links
 	var matchingFile node
 
 	if len(matchingFiles) == 0 {
-		return
+		return false
 	} else if len(matchingFiles) == 1 {
 		matchingFile = matchingFiles[0]
 	} else {
@@ -33,11 +33,10 @@ func handleSingleFileTorrent(torrent *singleFileTorrent, downloads []node, links
 	err := os.Symlink(matchingFile.path, filepath.Join(links, torrent.Info.Name))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		log.Println("Error linking", matchingFile.path, "->", torrent.Info.Name, err)
-		return
+		return false
 	}
-	// send to dl client
 
-	log.Println(matchingFile)
+	return true
 }
 
 func getBestMatchingFile(matchingFiles []node, torrentFileName string) node {

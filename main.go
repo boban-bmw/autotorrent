@@ -47,14 +47,20 @@ func main() {
 	torrents := parseTorrents(fileNames)
 	downloads := parseDownloads(downloadsDir)
 
-	log.Println(torrents, downloads)
-
 	for _, torrent := range torrents {
+		// TODO: check if torrent is already added in client
+
+		filesFound := false
+
 		switch t := torrent.(type) {
 		case *singleFileTorrent:
-			handleSingleFileTorrent(t, downloads, linksDir)
+			filesFound = handleSingleFileTorrent(t, downloads, linksDir)
 		case *multiFileTorrent:
 
+		}
+
+		if filesFound {
+			// TODO: add torrent to client
 		}
 	}
 }
