@@ -71,16 +71,7 @@ func main() {
 	torrents := parseTorrents(fileNames)
 	downloads := parseDownloads(downloadsDir)
 
-	existingTorrents, err := client.GetTorrentList()
-	if err != nil {
-		log.Fatalln("Couldn't get list of existing torrents", err)
-	}
-
-	log.Println(existingTorrents)
-
 	for _, torrent := range torrents {
-		// TODO: check if torrent is already added in client
-
 		filesFound := false
 
 		switch t := torrent.(type) {
@@ -92,6 +83,7 @@ func main() {
 
 		if filesFound {
 			// TODO: add torrent to client
+			client.AddTorrent()
 		}
 	}
 }

@@ -1,9 +1,7 @@
 package clients
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -51,35 +49,5 @@ func (q *QBittorrent) Init(config ClientConfig) error {
 	return nil
 }
 
-// GetTorrentList gets a list of existing torrents in qbt
-func (q *QBittorrent) GetTorrentList() ([]Torrent, error) {
-	URL := fmt.Sprintf("%s/%s", q.prefix, "torrents/info")
-
-	req, err := http.NewRequest("GET", URL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header = q.headers.Clone()
-
-	res, err := q.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	torrents := []Torrent{}
-
-	err = json.Unmarshal([]byte(body), &torrents)
-	if err != nil {
-		return nil, err
-	}
-
-	return torrents, nil
-}
+// AddTorrent adds a torrent file to qbt
+func (q *QBittorrent) AddTorrent() {}

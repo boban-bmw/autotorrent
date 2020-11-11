@@ -16,7 +16,7 @@ type ClientConfig struct {
 // TorrentClient exposes all methods we need from a torrent client
 type TorrentClient interface {
 	Init(config ClientConfig) error
-	GetTorrentList() ([]Torrent, error)
+	AddTorrent()
 }
 
 // Torrent represents an existing torrent in the client
