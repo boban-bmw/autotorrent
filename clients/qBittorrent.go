@@ -1,9 +1,13 @@
 package clients
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 )
 
@@ -36,8 +40,8 @@ func (q *QBittorrent) Init(config ClientConfig) error {
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
 
 	res, err := q.client.Do(req)
-	if err != nil {
-		return err
+	if err != nil || len(res.Cookies()) == 0 {
+		return fmt.Errorf("Network error or wrong credentials %v", err)
 	}
 
 	q.headers = http.Header{}
@@ -50,4 +54,47 @@ func (q *QBittorrent) Init(config ClientConfig) error {
 }
 
 // AddTorrent adds a torrent file to qbt
-func (q *QBittorrent) AddTorrent() {}
+func (q *QBittorrent) AddTorrent(path string, linksDir string, category string) error {
+	body := bytes.Buffer{}
+	writer := multipart.NewWriter(&body)
+
+	fileName := filepath.Base(path)
+
+	part, err := writer.CreateFormFile("torrents", fileName)
+	if err != nil {
+		return err
+	}
+
+	fileContents, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	part.Write(fileContents)
+
+	writer.WriteField("savepath", linksDir)
+	writer.WriteField("category", category)
+	writer.WriteField("skip_checking", "true")
+
+	err = writer.Close()
+	if err != nil {
+		return err
+	}
+
+	URL := fmt.Sprintf("%s/%s", q.prefix, "torrents/add")
+
+	req, err := http.NewRequest("POST", URL, &body)
+	if err != nil {
+		return err
+	}
+
+	req.Header = q.headers.Clone()
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+
+	_, err = q.client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

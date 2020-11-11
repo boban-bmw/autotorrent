@@ -13,12 +13,12 @@ type singleFileTorrentInfo struct {
 	Name        string
 	PieceLength int    `bencode:"piece length"`
 	PiecesRaw   string `bencode:"pieces"`
-	pieces      []byte
 }
 
 type singleFileTorrent struct {
 	Announce string
 	Info     singleFileTorrentInfo
+	path     string
 }
 
 type torrentFile struct {
@@ -31,12 +31,12 @@ type multiFileTorrentInfo struct {
 	Name        string
 	PieceLength int    `bencode:"piece length"`
 	PiecesRaw   string `bencode:"pieces"`
-	pieces      []byte
 }
 
 type multiFileTorrent struct {
 	Announce string
 	Info     multiFileTorrentInfo
+	path     string
 }
 
 func parseTorrents(fileNames []string) []interface{} {
@@ -70,16 +70,10 @@ func parseTorrents(fileNames []string) []interface{} {
 				log.Println("Couldn't unmarshal single-file torrent", fileName, err)
 				continue
 			}
-		}
 
-		switch tt := torrent.(type) {
-		case *singleFileTorrent:
-			tt.Info.pieces = []byte(tt.Info.PiecesRaw)
-		case *multiFileTorrent:
-			tt.Info.pieces = []byte(tt.Info.PiecesRaw)
-		default:
-			log.Printf("Unknown type %T encountered\n", tt)
-			continue
+			torrent.(*singleFileTorrent).path = fileName
+		} else {
+			torrent.(*multiFileTorrent).path = fileName
 		}
 
 		torrents = append(torrents, torrent)

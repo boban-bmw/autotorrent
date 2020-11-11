@@ -73,17 +73,23 @@ func main() {
 
 	for _, torrent := range torrents {
 		filesFound := false
+		path := ""
 
 		switch t := torrent.(type) {
 		case *singleFileTorrent:
 			filesFound = handleSingleFileTorrent(t, downloads, linksDir)
+			path = t.path
 		case *multiFileTorrent:
-			filesFound = handleMultiFileTorrent(t, downloads, linksDir)
+			// TODO: handle multi file torrent
+			// filesFound = handleMultiFileTorrent(t, downloads, linksDir)
+			// path = t.path
 		}
 
 		if filesFound {
-			// TODO: add torrent to client
-			client.AddTorrent()
+			err = client.AddTorrent(path, linksDir, opts.ClientCategory)
+			if err != nil {
+				log.Println("Error adding torrent", torrent, err)
+			}
 		}
 	}
 }
