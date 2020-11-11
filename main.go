@@ -1,37 +1,39 @@
 package main
 
 import (
-	"flag"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jessevdk/go-flags"
 )
 
+var opts struct {
+	Torrents  string `short:"t" long:"torrents" description:"Path to directory with .torrent files, relative to current directory" default:"."`
+	Downloads string `short:"d" long:"downloads" description:"Path to downloads directory, relative to current directory" default:"."`
+	Links     string `short:"l" long:"links" description:"Path to links directory, relative to current directory" required:"true"`
+}
+
 func main() {
-	torrentsDirFlag := flag.String("torrentsDir", ".", "Path to directory with .torrent files, relative to current directory")
-	downloadsDirFlag := flag.String("downloadsDir", ".", "Path to downloads directory, relative to the current directory")
-	linksDirFlag := flag.String("linksDir", "", "Path to the links directory, relative to the current directory")
-
-	flag.Parse()
-
-	if *linksDirFlag == "" {
-		log.Fatal("linksDir must be set!")
+	_, err := flags.Parse(&opts)
+	if err != nil {
+		log.Fatalln("Couldn't parse flags", err)
 	}
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		log.Fatal("Couldn't get current working directory", err)
+		log.Fatalln("Couldn't get current working directory", err)
 	}
 
-	torrentsDir := filepath.Join(cwd, *torrentsDirFlag)
-	downloadsDir := filepath.Join(cwd, *downloadsDirFlag)
-	linksDir := filepath.Join(cwd, *linksDirFlag)
+	torrentsDir := filepath.Join(cwd, opts.Torrents)
+	downloadsDir := filepath.Join(cwd, opts.Downloads)
+	linksDir := filepath.Join(cwd, opts.Links)
 
 	files, err := ioutil.ReadDir(torrentsDir)
 	if err != nil {
-		log.Fatal("Couldn't read", torrentsDir, err)
+		log.Fatalln("Couldn't read", torrentsDir, err)
 	}
 
 	fileNames := make([]string, 0)
@@ -56,7 +58,7 @@ func main() {
 		case *singleFileTorrent:
 			filesFound = handleSingleFileTorrent(t, downloads, linksDir)
 		case *multiFileTorrent:
-
+			filesFound = handleMultiFileTorrent(t, downloads, linksDir)
 		}
 
 		if filesFound {
