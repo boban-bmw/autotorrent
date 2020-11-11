@@ -3,23 +3,47 @@ package main
 import (
 	"errors"
 	"log"
-	"math"
 	"os"
 	"path/filepath"
 )
 
-func handleMultiFileTorrent(torrent *multiFileTorrent, downloads []node, links string, maxMissingFiles int) bool {
+func handleMultiFileTorrent(torrent *multiFileTorrent, downloads []node, links string, maxMissing int64) bool {
 	matchingFiles := make([]node, 0)
 
 	for _, file := range downloads {
 		for _, torrentFile := range torrent.Info.Files {
 			if torrentFile.Length == file.info.Size() {
 				matchingFiles = append(matchingFiles, file)
+				continue
 			}
+		}
+
+		if len(matchingFiles) == len(torrent.Info.Files) {
+			break
 		}
 	}
 
-	if math.Abs(float64(len(matchingFiles)-len(torrent.Info.Files))) > float64(maxMissingFiles) {
+	missingFileSize := int64(0)
+	totalFileSize := int64(0)
+
+	for _, torrentFile := range torrent.Info.Files {
+		totalFileSize = totalFileSize + torrentFile.Length
+
+		fileFound := false
+
+		for _, matchingFile := range matchingFiles {
+			if torrentFile.Length == matchingFile.info.Size() {
+				fileFound = true
+				break
+			}
+		}
+
+		if !fileFound {
+			missingFileSize = missingFileSize + torrentFile.Length
+		}
+	}
+
+	if missingFileSize/totalFileSize > maxMissing/100 {
 		return false
 	}
 

@@ -13,15 +13,15 @@ import (
 )
 
 var opts struct {
-	Torrents        string `short:"t" long:"torrents" description:"Path to directory with .torrent files, relative to current directory" default:"."`
-	Downloads       string `short:"d" long:"downloads" description:"Path to downloads directory, relative to current directory" default:"."`
-	Links           string `short:"l" long:"links" description:"Path to links directory, relative to current directory" required:"true"`
-	ClientUsername  string `short:"u" long:"username" description:"Torrent client username" required:"true"`
-	ClientPassword  string `short:"p" long:"password" description:"Torrent client password" required:"true"`
-	ClientURL       string `long:"url" description:"Torrent client URL" required:"true"`
-	ClientCategory  string `short:"c" long:"category" description:"Category for the added torrent" required:"true"`
-	ClientID        string `short:"i" long:"client" description:"Id of the torrent client" required:"true" choice:"qbt"`
-	MaxMissingFiles int    `short:"m" long:"max-missing-files" description:"Maximum missing files in a torrent" default:"2"`
+	Torrents       string `short:"t" long:"torrents" description:"Path to directory with .torrent files, relative to current directory" default:"."`
+	Downloads      string `short:"d" long:"downloads" description:"Path to downloads directory, relative to current directory" default:"."`
+	Links          string `short:"l" long:"links" description:"Path to links directory, relative to current directory" required:"true"`
+	ClientUsername string `short:"u" long:"username" description:"Torrent client username" required:"true"`
+	ClientPassword string `short:"p" long:"password" description:"Torrent client password" required:"true"`
+	ClientURL      string `long:"url" description:"Torrent client URL" required:"true"`
+	ClientCategory string `short:"c" long:"category" description:"Category for the added torrent" required:"true"`
+	ClientID       string `short:"i" long:"client" description:"Id of the torrent client" required:"true" choice:"qbt"`
+	MaxMissing     int64  `short:"m" long:"max-missing-percent" description:"Maximum missing percentage in a torrent" default:"5"`
 }
 
 func main() {
@@ -81,7 +81,7 @@ func main() {
 			filesFound = handleSingleFileTorrent(t, downloads, linksDir)
 			path = t.path
 		case *multiFileTorrent:
-			filesFound = handleMultiFileTorrent(t, downloads, linksDir, opts.MaxMissingFiles)
+			filesFound = handleMultiFileTorrent(t, downloads, linksDir, opts.MaxMissing)
 			path = t.path
 		}
 
