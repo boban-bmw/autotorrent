@@ -35,7 +35,7 @@ func handleMultiFileTorrent(torrent *multiFileTorrent, downloads []node, links s
 		}
 	}
 
-	if missingFileSize/totalFileSize > maxMissing/100 {
+	if float64(missingFileSize)/float64(totalFileSize) > float64(maxMissing)/float64(100) {
 		return false
 	}
 
