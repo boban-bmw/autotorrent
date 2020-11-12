@@ -44,6 +44,11 @@ func (q *QBittorrent) Init(config ClientConfig) error {
 		return fmt.Errorf("Network error or wrong credentials %v", err)
 	}
 
+	err = res.Body.Close()
+	if err != nil {
+		return err
+	}
+
 	q.headers = http.Header{}
 	q.headers.Set("Referer", referer)
 
@@ -91,7 +96,12 @@ func (q *QBittorrent) AddTorrent(path string, linksDir string, category string) 
 	req.Header = q.headers.Clone()
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 
-	_, err = q.client.Do(req)
+	res, err := q.client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	err = res.Body.Close()
 	if err != nil {
 		return err
 	}
