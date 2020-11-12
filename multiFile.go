@@ -8,37 +8,29 @@ import (
 )
 
 func handleMultiFileTorrent(torrent *multiFileTorrent, downloads []node, links string, maxMissing int64) bool {
-	matchingFiles := make([]node, 0)
+	fileMap := make(map[string]node)
 
-	for _, file := range downloads {
-		for _, torrentFile := range torrent.Info.Files {
-			if torrentFile.Length == file.info.Size() {
-				matchingFiles = append(matchingFiles, file)
-				continue
-			}
-		}
-
-		if len(matchingFiles) == len(torrent.Info.Files) {
-			break
-		}
-	}
-
-	missingFileSize := int64(0)
 	totalFileSize := int64(0)
 
 	for _, torrentFile := range torrent.Info.Files {
 		totalFileSize = totalFileSize + torrentFile.Length
 
-		fileFound := false
-
-		for _, matchingFile := range matchingFiles {
-			if torrentFile.Length == matchingFile.info.Size() {
-				fileFound = true
+		for _, file := range downloads {
+			if torrentFile.Length == file.info.Size() {
+				fileMap[filepath.Join(torrentFile.Path...)] = file
 				break
 			}
 		}
 
-		if !fileFound {
+		if len(fileMap) == len(torrent.Info.Files) {
+			break
+		}
+	}
+
+	missingFileSize := int64(0)
+
+	for _, torrentFile := range torrent.Info.Files {
+		if _, ok := fileMap[filepath.Join(torrentFile.Path...)]; !ok {
 			missingFileSize = missingFileSize + torrentFile.Length
 		}
 	}
@@ -52,10 +44,21 @@ func handleMultiFileTorrent(torrent *multiFileTorrent, downloads []node, links s
 		return false
 	}
 
-	for _, matchingFile := range matchingFiles {
-		err := os.Symlink(matchingFile.path, filepath.Join(links, torrent.Info.Name, matchingFile.info.Name()))
+	for torrentFilePath, file := range fileMap {
+		pathFragments := []string{links, torrent.Info.Name}
+		pathFragments = append(pathFragments, torrentFilePath)
+
+		completePath := filepath.Join(pathFragments...)
+		fileDir := filepath.Dir(completePath)
+
+		err := os.MkdirAll(fileDir, 0755)
 		if err != nil && !errors.Is(err, os.ErrExist) {
-			log.Println("Error linking", matchingFile.path, "->", torrent.Info.Name, err)
+			return false
+		}
+
+		err = os.Symlink(file.path, completePath)
+		if err != nil && !errors.Is(err, os.ErrExist) {
+			log.Println("Error linking", file.path, "->", completePath, err)
 			return false
 		}
 	}
