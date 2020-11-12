@@ -80,6 +80,7 @@ func (q *QBittorrent) AddTorrent(path string, linksDir string, category string) 
 	writer.WriteField("savepath", linksDir)
 	writer.WriteField("category", category)
 	writer.WriteField("skip_checking", "true")
+	writer.WriteField("paused", "true")
 
 	err = writer.Close()
 	if err != nil {
