@@ -2,6 +2,7 @@ package main
 
 import (
 	"autotorrent/clients"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/url"
@@ -75,21 +76,49 @@ func main() {
 	for _, torrent := range torrents {
 		filesFound := false
 		path := ""
+		trackerDir := ""
 
 		switch t := torrent.(type) {
 		case *singleFileTorrent:
-			filesFound = handleSingleFileTorrent(t, downloads, linksDir)
+			trackerDir, err = createTrackerDir(linksDir, t.Announce)
+			if err != nil {
+				log.Fatal("Couldn't create tracker folder", t.Announce, err)
+			}
+
+			filesFound = handleSingleFileTorrent(t, downloads, trackerDir)
 			path = t.path
 		case *multiFileTorrent:
-			filesFound = handleMultiFileTorrent(t, downloads, linksDir, opts.MaxMissing)
+			trackerDir, err = createTrackerDir(linksDir, t.Announce)
+			if err != nil {
+				log.Fatal("Couldn't create tracker folder", t.Announce, err)
+			}
+
+			filesFound = handleMultiFileTorrent(t, downloads, trackerDir, opts.MaxMissing)
 			path = t.path
 		}
 
 		if filesFound {
-			err = client.AddTorrent(path, linksDir, opts.ClientCategory)
+			err = client.AddTorrent(path, trackerDir, opts.ClientCategory)
 			if err != nil {
 				log.Println("Error adding torrent", torrent, err)
 			}
 		}
 	}
+}
+
+func createTrackerDir(linksDir string, trackerURL string) (string, error) {
+	tracker, err := url.Parse(trackerURL)
+	if err != nil {
+		log.Println("Couldn't parse tracker name", trackerURL)
+		return "", err
+	}
+
+	trackerDir := filepath.Join(linksDir, tracker.Hostname())
+
+	err = os.Mkdir(trackerDir, 0755)
+	if err != nil && !errors.Is(err, os.ErrExist) {
+		return "", err
+	}
+
+	return trackerDir, nil
 }
