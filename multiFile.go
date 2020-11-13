@@ -7,31 +7,49 @@ import (
 	"path/filepath"
 )
 
+type match struct {
+	torrentPath string
+	file        node
+}
+
 func handleMultiFileTorrent(torrent *multiFileTorrent, downloads []node, links string, maxMissing int64) bool {
-	fileMap := make(map[string]node)
+	potentialMatches := []match{}
 
 	totalFileSize := int64(0)
 
 	for _, torrentFile := range torrent.Info.Files {
-		totalFileSize = totalFileSize + torrentFile.Length
+		totalFileSize += torrentFile.Length
 
 		for _, file := range downloads {
 			if torrentFile.Length == file.info.Size() {
-				fileMap[filepath.Join(torrentFile.Path...)] = file
-				break
+				potentialMatches = append(potentialMatches, match{
+					torrentPath: filepath.Join(torrentFile.Path...),
+					file:        file,
+				})
 			}
 		}
+	}
 
-		if len(fileMap) == len(torrent.Info.Files) {
-			break
-		}
+	matches, err := compareHashMultiFile(potentialMatches, torrent)
+	if err != nil {
+		log.Println("Error comparing multi file hash", torrent, err)
+		return false
 	}
 
 	missingFileSize := int64(0)
 
 	for _, torrentFile := range torrent.Info.Files {
-		if _, ok := fileMap[filepath.Join(torrentFile.Path...)]; !ok {
-			missingFileSize = missingFileSize + torrentFile.Length
+		found := false
+
+		for _, match := range matches {
+			if match.torrentPath == filepath.Join(torrentFile.Path...) {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			missingFileSize += torrentFile.Length
 		}
 	}
 
@@ -39,14 +57,14 @@ func handleMultiFileTorrent(torrent *multiFileTorrent, downloads []node, links s
 		return false
 	}
 
-	err := os.Mkdir(filepath.Join(links, torrent.Info.Name), 0755)
+	err = os.Mkdir(filepath.Join(links, torrent.Info.Name), 0755)
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		return false
 	}
 
-	for torrentFilePath, file := range fileMap {
+	for _, match := range matches {
 		pathFragments := []string{links, torrent.Info.Name}
-		pathFragments = append(pathFragments, torrentFilePath)
+		pathFragments = append(pathFragments, match.torrentPath)
 
 		completePath := filepath.Join(pathFragments...)
 		fileDir := filepath.Dir(completePath)
@@ -56,9 +74,9 @@ func handleMultiFileTorrent(torrent *multiFileTorrent, downloads []node, links s
 			return false
 		}
 
-		err = os.Symlink(file.path, completePath)
+		err = os.Symlink(match.file.path, completePath)
 		if err != nil && !errors.Is(err, os.ErrExist) {
-			log.Println("Error linking", file.path, "->", completePath, err)
+			log.Println("Error linking", match.file.path, "->", completePath, err)
 			return false
 		}
 	}
