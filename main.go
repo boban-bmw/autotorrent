@@ -44,6 +44,8 @@ func init() {
 }
 
 func main() {
+	defer saveCache()
+
 	_, err := flags.Parse(&opts)
 	if err != nil {
 		log.Fatalln("Couldn't parse flags", err)
@@ -122,13 +124,6 @@ func main() {
 			}
 		}
 	}
-
-	rawCache, err := json.Marshal(cache)
-	if err != nil {
-		log.Println("Error marshaling cache", err)
-	}
-
-	ioutil.WriteFile(cacheName, rawCache, 0755)
 }
 
 func createTrackerDir(linksDir string, trackerURL string) (string, error) {
@@ -146,4 +141,13 @@ func createTrackerDir(linksDir string, trackerURL string) (string, error) {
 	}
 
 	return trackerDir, nil
+}
+
+func saveCache() {
+	rawCache, err := json.Marshal(cache)
+	if err != nil {
+		log.Println("Error marshaling cache", err)
+	}
+
+	ioutil.WriteFile(cacheName, rawCache, 0755)
 }
