@@ -13,6 +13,7 @@ type singleFileTorrentInfo struct {
 	Name        string
 	PieceLength int    `bencode:"piece length"`
 	PiecesRaw   string `bencode:"pieces"`
+	pieces      []byte
 }
 
 type singleFileTorrent struct {
@@ -31,6 +32,7 @@ type multiFileTorrentInfo struct {
 	Name        string
 	PieceLength int    `bencode:"piece length"`
 	PiecesRaw   string `bencode:"pieces"`
+	pieces      []byte
 }
 
 type multiFileTorrent struct {
@@ -72,8 +74,10 @@ func parseTorrents(fileNames []string) []interface{} {
 			}
 
 			torrent.(*singleFileTorrent).path = fileName
+			torrent.(*singleFileTorrent).Info.pieces = []byte(torrent.(*singleFileTorrent).Info.PiecesRaw)
 		} else {
 			torrent.(*multiFileTorrent).path = fileName
+			torrent.(*multiFileTorrent).Info.pieces = []byte(torrent.(*multiFileTorrent).Info.PiecesRaw)
 		}
 
 		torrents = append(torrents, torrent)

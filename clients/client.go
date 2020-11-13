@@ -19,11 +19,6 @@ type TorrentClient interface {
 	AddTorrent(path string, linksDir string, category string) error
 }
 
-// Torrent represents an existing torrent in the client
-type Torrent struct {
-	Hash string
-}
-
 // GetClient initializes a TorrentClient
 func GetClient(config ClientConfig, id string) (TorrentClient, error) {
 	var client TorrentClient
