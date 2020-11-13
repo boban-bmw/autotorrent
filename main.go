@@ -2,6 +2,7 @@ package main
 
 import (
 	"autotorrent/clients"
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"log"
@@ -23,6 +24,23 @@ var opts struct {
 	ClientCategory string `short:"c" long:"category" description:"Category for the added torrent" required:"true"`
 	ClientID       string `short:"i" long:"client" description:"Id of the torrent client" required:"true" choice:"qbt"`
 	MaxMissing     int64  `short:"m" long:"max-missing-percent" description:"Maximum missing percentage in a torrent" default:"5"`
+}
+
+var cache map[string][]byte = map[string][]byte{}
+var cacheName string = "_autotorrent.cache"
+
+func init() {
+	rawCache, err := ioutil.ReadFile(cacheName)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Println("Error while reading cache", err)
+	}
+
+	if len(rawCache) != 0 {
+		err = json.Unmarshal(rawCache, &cache)
+		if err != nil {
+			log.Println("Error unmarshaling from cache", err)
+		}
+	}
 }
 
 func main() {
@@ -104,6 +122,13 @@ func main() {
 			}
 		}
 	}
+
+	rawCache, err := json.Marshal(cache)
+	if err != nil {
+		log.Println("Error marshaling cache", err)
+	}
+
+	ioutil.WriteFile(cacheName, rawCache, 0755)
 }
 
 func createTrackerDir(linksDir string, trackerURL string) (string, error) {

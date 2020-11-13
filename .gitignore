@@ -3,3 +3,4 @@ autotorrent
 *.torrent
 links
 kali-linux*
+*.cache

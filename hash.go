@@ -3,13 +3,29 @@ package main
 import (
 	"crypto/sha1"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"os"
 	"path/filepath"
 )
 
+func getKey(filePath string, pieceLength int64, offset int64) string {
+	return fmt.Sprintf("%v-%v-%v", filePath, pieceLength, offset)
+}
+
 func getFileHash(filePath string, pieceLength int64, offset int64) ([sha1.Size]byte, error) {
+	cacheKey := getKey(filePath, offset, offset)
+
+	cachedByteArray, found := cache[cacheKey]
+	if found {
+		var cachedHash [sha1.Size]byte
+
+		copy(cachedHash[:], cachedByteArray)
+
+		return cachedHash, nil
+	}
+
 	fileHash := [sha1.Size]byte{}
 
 	file, err := os.Open(filePath)
@@ -31,6 +47,8 @@ func getFileHash(filePath string, pieceLength int64, offset int64) ([sha1.Size]b
 	}
 
 	fileHash = sha1.Sum(fileSlice)
+
+	cache[cacheKey] = fileHash[:]
 
 	return fileHash, nil
 }
@@ -63,7 +81,7 @@ func compareHashMultiFile(potentialMatches []match, torrent *multiFileTorrent) (
 		// bordering piece contains both prev file(s) and current file - this is how much of it is from current file
 		fileBeginPieceMod := fileOffset % pieceLength
 
-		// easy case - file contains at least 1 whole piece
+		// file contains at least 1 whole piece - use it to check if it's ok
 		if fileBeginPieceMod+pieceLength < potentialMatch.file.info.Size() {
 			pieceIndex := int64(math.Floor(float64(fileOffset)/float64(pieceLength)) + 1)
 
