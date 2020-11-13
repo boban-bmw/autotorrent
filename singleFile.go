@@ -10,7 +10,7 @@ import (
 func handleSingleFileTorrent(torrent *singleFileTorrent, downloads []node, links string) bool {
 	torrentSize := torrent.Info.Length
 
-	var matchingFile node
+	var matchingFile *node
 
 	for _, file := range downloads {
 		if file.info.Size() == torrentSize {
@@ -21,9 +21,13 @@ func handleSingleFileTorrent(torrent *singleFileTorrent, downloads []node, links
 			}
 
 			if matchFound {
-				matchingFile = file
+				matchingFile = &file
 			}
 		}
+	}
+
+	if matchingFile == nil {
+		return false
 	}
 
 	err := os.Symlink(matchingFile.path, filepath.Join(links, torrent.Info.Name))
