@@ -180,5 +180,5 @@ func saveCache() {
 		log.Println("Error marshaling cache", err)
 	}
 
-	ioutil.WriteFile(cacheName, rawCache, 0755)
+	ioutil.WriteFile(cacheName, rawCache, 0600)
 }
