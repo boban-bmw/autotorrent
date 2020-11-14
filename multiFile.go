@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/agnivade/levenshtein"
 )
@@ -33,6 +34,8 @@ func handleMultiFileTorrent(torrent *multiFileTorrent, downloads map[int64][]nod
 
 	totalFileSize := int64(0)
 
+	handleRars := false
+
 	for _, torrentFile := range torrent.Info.Files {
 		totalFileSize += torrentFile.Length
 
@@ -43,6 +46,10 @@ func handleMultiFileTorrent(torrent *multiFileTorrent, downloads map[int64][]nod
 
 		fullPath := filepath.Join(torrentFile.Path...)
 
+		if strings.HasSuffix(fullPath, ".rar") {
+			handleRars = true
+		}
+
 		for _, sizeMatch := range sizeMatches {
 			potentialMatches[fullPath] = append(potentialMatches[fullPath], match{
 				torrentPath: fullPath,
@@ -52,18 +59,27 @@ func handleMultiFileTorrent(torrent *multiFileTorrent, downloads map[int64][]nod
 		}
 	}
 
+	var matches []match
+	var err error
+
 	for _, matchesFragment := range potentialMatches {
 		sort.Sort(byLevDistance(matchesFragment))
 
-		if len(matchesFragment) > 11 {
-			matchesFragment = matchesFragment[:11]
+		if handleRars {
+			rarMatch := matchesFragment[0]
+
+			if rarMatch.levDistance == 0 {
+				matches = append(matches)
+			}
 		}
 	}
 
-	matches, err := compareHashMultiFile(potentialMatches, torrent)
-	if err != nil {
-		log.Println("Error comparing multi file hash", torrent, err)
-		return false
+	if !handleRars {
+		matches, err = compareHashMultiFile(potentialMatches, torrent)
+		if err != nil {
+			log.Println("Error comparing multi file hash", torrent, err)
+			return false
+		}
 	}
 
 	missingFileSize := int64(0)

@@ -82,10 +82,10 @@ func compareHashMultiFile(potentialMatchesMap map[string][]match, torrent *multi
 		}
 
 		// bordering piece contains both prev file(s) and current file - this is how much of it is from current file
-		fileBeginPieceMod := fileOffset % pieceLength
+		wholePieceOffset := fileOffset % pieceLength
 
 		// file contains at least 1 whole piece - use it to check if it's ok
-		if fileBeginPieceMod+pieceLength < fileSize {
+		if wholePieceOffset+pieceLength <= fileSize {
 			pieceIndex := int64(math.Floor(float64(fileOffset)/float64(pieceLength)) + 1)
 
 			pieceStart := pieceIndex * sha1.Size
@@ -95,10 +95,8 @@ func compareHashMultiFile(potentialMatchesMap map[string][]match, torrent *multi
 
 			copy(pieceHash[:], torrent.Info.pieces[pieceStart:pieceEnd])
 
-			fileReadOffset := int64(pieceIndex)*pieceLength - fileBeginPieceMod
-
 			for _, potentialMatch := range potentialMatches {
-				fileMatches, err := compareHashSingleFile(potentialMatch.file.path, pieceLength, pieceHash, fileReadOffset)
+				fileMatches, err := compareHashSingleFile(potentialMatch.file.path, pieceLength, pieceHash, pieceLength-wholePieceOffset)
 				if err != nil {
 					continue
 				}

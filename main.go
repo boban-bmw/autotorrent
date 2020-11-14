@@ -113,6 +113,9 @@ func main() {
 	totalTorrents := len(torrents)
 
 	for index, torrent := range torrents {
+		// TODO: skip existing torrent
+		// TODO: folder per torrent (filename colision?)
+
 		filesFound := false
 		path := ""
 		trackerDir := ""
