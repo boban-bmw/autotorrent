@@ -55,7 +55,7 @@ func handleMultiFileTorrent(torrent *multiFileTorrent, downloads map[int64][]nod
 	for _, matchesFragment := range potentialMatches {
 		sort.Sort(byLevDistance(matchesFragment))
 
-		if len(potentialMatches) > 11 {
+		if len(matchesFragment) > 11 {
 			matchesFragment = matchesFragment[:11]
 		}
 	}

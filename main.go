@@ -126,7 +126,7 @@ func main() {
 				log.Fatal("Couldn't create tracker folder", t.Announce, err)
 			}
 
-			log.Println(progressLabel, "Processing", t.Info.Name, "...")
+			log.Println(progressLabel, "Processing", filepath.Base(trackerDir), t.Info.Name, "...")
 
 			filesFound = handleSingleFileTorrent(t, downloads, trackerDir)
 			path = t.path
@@ -136,7 +136,7 @@ func main() {
 				log.Fatal("Couldn't create tracker folder", t.Announce, err)
 			}
 
-			log.Println(progressLabel, "Processing", t.Announce, t.Info.Name, "...")
+			log.Println(progressLabel, "Processing", filepath.Base(trackerDir), t.Info.Name, "...")
 
 			filesFound = handleMultiFileTorrent(t, downloads, trackerDir, opts.MaxMissing)
 			path = t.path
