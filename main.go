@@ -80,6 +80,8 @@ func main() {
 	downloadsDir := filepath.Join(cwd, opts.Downloads)
 	linksDir := filepath.Join(cwd, opts.Links)
 
+	log.Println("Scanning", torrentsDir)
+
 	files, err := ioutil.ReadDir(torrentsDir)
 	if err != nil {
 		log.Fatalln("Couldn't read", torrentsDir, err)
@@ -95,9 +97,13 @@ func main() {
 		}
 	}
 
+	log.Println("Parsing torrents")
+
 	torrents := parseTorrents(fileNames)
 
 	log.Println("Found", len(torrents), "torrents")
+
+	log.Println("Scanning", downloadsDir)
 
 	downloads := parseDownloads(downloadsDir)
 
@@ -111,8 +117,7 @@ func main() {
 		path := ""
 		trackerDir := ""
 
-		currentIndex := index + 1
-		progressLabel := fmt.Sprintf("%v/%v (%.2f)", currentIndex, totalTorrents, float64(currentIndex)/float64(totalTorrents))
+		progressLabel := fmt.Sprintf("%v/%v", index+1, totalTorrents)
 
 		switch t := torrent.(type) {
 		case *singleFileTorrent:
@@ -131,7 +136,7 @@ func main() {
 				log.Fatal("Couldn't create tracker folder", t.Announce, err)
 			}
 
-			log.Println(progressLabel, "Processing", t.Info.Name)
+			log.Println(progressLabel, "Processing", t.Announce, t.Info.Name)
 
 			filesFound = handleMultiFileTorrent(t, downloads, trackerDir, opts.MaxMissing)
 			path = t.path
@@ -139,8 +144,6 @@ func main() {
 
 		if filesFound {
 			matches++
-
-			log.Println("Match found! Adding to client...")
 
 			err = client.AddTorrent(path, trackerDir, opts.ClientCategory)
 			if err != nil {
