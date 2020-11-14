@@ -28,31 +28,36 @@ func (m byLevDistance) Less(i, j int) bool {
 	return m[i].levDistance < m[j].levDistance
 }
 
-func handleMultiFileTorrent(torrent *multiFileTorrent, downloads []node, links string, maxMissing int64) bool {
-	potentialMatches := []match{}
+func handleMultiFileTorrent(torrent *multiFileTorrent, downloads map[int64][]node, links string, maxMissing int64) bool {
+	potentialMatches := map[string][]match{}
 
 	totalFileSize := int64(0)
 
 	for _, torrentFile := range torrent.Info.Files {
 		totalFileSize += torrentFile.Length
 
-		for _, file := range downloads {
-			if torrentFile.Length == file.info.Size() {
-				fullPath := filepath.Join(torrentFile.Path...)
+		sizeMatches, ok := downloads[torrentFile.Length]
+		if !ok {
+			continue
+		}
 
-				potentialMatches = append(potentialMatches, match{
-					torrentPath: fullPath,
-					file:        file,
-					levDistance: levenshtein.ComputeDistance(file.info.Name(), filepath.Base(fullPath)),
-				})
-			}
+		fullPath := filepath.Join(torrentFile.Path...)
+
+		for _, sizeMatch := range sizeMatches {
+			potentialMatches[fullPath] = append(potentialMatches[fullPath], match{
+				torrentPath: fullPath,
+				file:        sizeMatch,
+				levDistance: levenshtein.ComputeDistance(sizeMatch.info.Name(), filepath.Base(fullPath)),
+			})
 		}
 	}
 
-	sort.Sort(byLevDistance(potentialMatches))
+	for _, matchesFragment := range potentialMatches {
+		sort.Sort(byLevDistance(matchesFragment))
 
-	if len(potentialMatches) > 11 {
-		potentialMatches = potentialMatches[:11]
+		if len(potentialMatches) > 11 {
+			matchesFragment = matchesFragment[:11]
+		}
 	}
 
 	matches, err := compareHashMultiFile(potentialMatches, torrent)

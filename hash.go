@@ -62,18 +62,19 @@ func compareHashSingleFile(potentialMatchPath string, pieceLength int64, pieceHa
 	return fileHash == pieceHash, nil
 }
 
-func compareHashMultiFile(potentialMatches []match, torrent *multiFileTorrent) ([]match, error) {
+func compareHashMultiFile(potentialMatchesMap map[string][]match, torrent *multiFileTorrent) ([]match, error) {
 	pieceLength := torrent.Info.PieceLength
 
 	matches := []match{}
 
-	smallUnmatchedFiles := map[string]match{}
-
-	for _, potentialMatch := range potentialMatches {
+	for torrentFilePath, potentialMatches := range potentialMatchesMap {
 		fileOffset := int64(0)
+		fileSize := int64(0)
 
 		for _, torrentFile := range torrent.Info.Files {
-			if potentialMatch.torrentPath == filepath.Join(torrentFile.Path...) {
+			if torrentFilePath == filepath.Join(torrentFile.Path...) {
+				fileSize = torrentFile.Length
+
 				break
 			}
 
@@ -84,7 +85,7 @@ func compareHashMultiFile(potentialMatches []match, torrent *multiFileTorrent) (
 		fileBeginPieceMod := fileOffset % pieceLength
 
 		// file contains at least 1 whole piece - use it to check if it's ok
-		if fileBeginPieceMod+pieceLength < potentialMatch.file.info.Size() {
+		if fileBeginPieceMod+pieceLength < fileSize {
 			pieceIndex := int64(math.Floor(float64(fileOffset)/float64(pieceLength)) + 1)
 
 			pieceStart := pieceIndex * sha1.Size
@@ -96,24 +97,22 @@ func compareHashMultiFile(potentialMatches []match, torrent *multiFileTorrent) (
 
 			fileReadOffset := int64(pieceIndex)*pieceLength - fileBeginPieceMod
 
-			fileMatches, err := compareHashSingleFile(potentialMatch.file.path, pieceLength, pieceHash, fileReadOffset)
-			if err != nil {
-				continue
-			}
+			for _, potentialMatch := range potentialMatches {
+				fileMatches, err := compareHashSingleFile(potentialMatch.file.path, pieceLength, pieceHash, fileReadOffset)
+				if err != nil {
+					continue
+				}
 
-			if fileMatches {
-				matches = append(matches, potentialMatch)
+				if fileMatches {
+					matches = append(matches, potentialMatch)
+					break
+				}
 			}
 		} else {
-			prevSmallMatch, found := smallUnmatchedFiles[potentialMatch.torrentPath]
-			if !found || prevSmallMatch.levDistance > potentialMatch.levDistance {
-				smallUnmatchedFiles[potentialMatch.torrentPath] = potentialMatch
+			if len(potentialMatches) >= 1 {
+				matches = append(matches, potentialMatches[0])
 			}
 		}
-	}
-
-	for _, smallFileMatch := range smallUnmatchedFiles {
-		matches = append(matches, smallFileMatch)
 	}
 
 	return matches, nil

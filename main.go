@@ -97,13 +97,13 @@ func main() {
 		}
 	}
 
-	log.Println("Parsing torrents")
+	log.Println("Parsing torrents...")
 
 	torrents := parseTorrents(fileNames)
 
 	log.Println("Found", len(torrents), "torrents")
 
-	log.Println("Scanning", downloadsDir)
+	log.Println("Scanning", downloadsDir, "...")
 
 	downloads := parseDownloads(downloadsDir)
 
@@ -126,7 +126,7 @@ func main() {
 				log.Fatal("Couldn't create tracker folder", t.Announce, err)
 			}
 
-			log.Println(progressLabel, "Processing", t.Info.Name)
+			log.Println(progressLabel, "Processing", t.Info.Name, "...")
 
 			filesFound = handleSingleFileTorrent(t, downloads, trackerDir)
 			path = t.path
@@ -136,7 +136,7 @@ func main() {
 				log.Fatal("Couldn't create tracker folder", t.Announce, err)
 			}
 
-			log.Println(progressLabel, "Processing", t.Announce, t.Info.Name)
+			log.Println(progressLabel, "Processing", t.Announce, t.Info.Name, "...")
 
 			filesFound = handleMultiFileTorrent(t, downloads, trackerDir, opts.MaxMissing)
 			path = t.path
@@ -144,6 +144,8 @@ func main() {
 
 		if filesFound {
 			matches++
+
+			log.Println("Match found, adding to client...")
 
 			err = client.AddTorrent(path, trackerDir, opts.ClientCategory)
 			if err != nil {

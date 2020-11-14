@@ -8,8 +8,11 @@ import (
 	"path/filepath"
 )
 
-func handleSingleFileTorrent(torrent *singleFileTorrent, downloads []node, links string) bool {
-	torrentSize := torrent.Info.Length
+func handleSingleFileTorrent(torrent *singleFileTorrent, downloads map[int64][]node, links string) bool {
+	potentialMatches, ok := downloads[torrent.Info.Length]
+	if !ok {
+		return false
+	}
 
 	var firstPiece [sha1.Size]byte
 
@@ -17,17 +20,16 @@ func handleSingleFileTorrent(torrent *singleFileTorrent, downloads []node, links
 
 	var matchingFile *node
 
-	for _, file := range downloads {
-		if file.info.Size() == torrentSize {
-			matchFound, err := compareHashSingleFile(file.path, torrent.Info.PieceLength, firstPiece, 0)
-			if err != nil {
-				log.Println("An error ocurred comparing hashes", err)
-				continue
-			}
+	for _, potentialMatch := range potentialMatches {
+		matchFound, err := compareHashSingleFile(potentialMatch.path, torrent.Info.PieceLength, firstPiece, 0)
+		if err != nil {
+			log.Println("An error ocurred comparing hashes", err)
+			continue
+		}
 
-			if matchFound {
-				matchingFile = &file
-			}
+		if matchFound {
+			matchingFile = &potentialMatch
+			break
 		}
 	}
 

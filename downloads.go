@@ -11,8 +11,8 @@ type node struct {
 	path string
 }
 
-func parseDownloads(path string) []node {
-	downloads := make([]node, 0)
+func parseDownloads(path string) map[int64][]node {
+	downloads := map[int64][]node{}
 
 	filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -21,7 +21,7 @@ func parseDownloads(path string) []node {
 		}
 
 		if !info.IsDir() {
-			downloads = append(downloads, node{
+			downloads[info.Size()] = append(downloads[info.Size()], node{
 				info: info,
 				path: path,
 			})
