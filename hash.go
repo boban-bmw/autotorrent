@@ -15,7 +15,7 @@ func getKey(filePath string, pieceLength int64, offset int64) string {
 }
 
 func getFileHash(filePath string, pieceLength int64, offset int64) ([sha1.Size]byte, error) {
-	cacheKey := getKey(filePath, offset, offset)
+	cacheKey := getKey(filePath, pieceLength, offset)
 
 	cachedByteArray, found := cache[cacheKey]
 	if found {
