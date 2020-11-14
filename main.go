@@ -4,6 +4,7 @@ import (
 	"autotorrent/clients"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/url"
@@ -102,10 +103,16 @@ func main() {
 
 	log.Println("Found", len(downloads), "downloaded files")
 
-	for _, torrent := range torrents {
+	matches := 0
+	totalTorrents := len(torrents)
+
+	for index, torrent := range torrents {
 		filesFound := false
 		path := ""
 		trackerDir := ""
+
+		currentIndex := index + 1
+		progressLabel := fmt.Sprintf("%v/%v (%.2f)", currentIndex, totalTorrents, float64(currentIndex)/float64(totalTorrents))
 
 		switch t := torrent.(type) {
 		case *singleFileTorrent:
@@ -114,7 +121,7 @@ func main() {
 				log.Fatal("Couldn't create tracker folder", t.Announce, err)
 			}
 
-			log.Println("Processing", t.Info.Name)
+			log.Println(progressLabel, "Processing", t.Info.Name)
 
 			filesFound = handleSingleFileTorrent(t, downloads, trackerDir)
 			path = t.path
@@ -124,13 +131,15 @@ func main() {
 				log.Fatal("Couldn't create tracker folder", t.Announce, err)
 			}
 
-			log.Println("Processing", t.Info.Name)
+			log.Println(progressLabel, "Processing", t.Info.Name)
 
 			filesFound = handleMultiFileTorrent(t, downloads, trackerDir, opts.MaxMissing)
 			path = t.path
 		}
 
 		if filesFound {
+			matches++
+
 			log.Println("Match found! Adding to client...")
 
 			err = client.AddTorrent(path, trackerDir, opts.ClientCategory)
@@ -139,6 +148,8 @@ func main() {
 			}
 		}
 	}
+
+	log.Println("Total matches found:", matches)
 }
 
 func createTrackerDir(linksDir string, trackerURL string) (string, error) {
