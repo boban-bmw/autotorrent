@@ -67,6 +67,8 @@ func compareHashMultiFile(potentialMatches []match, torrent *multiFileTorrent) (
 
 	matches := []match{}
 
+	smallUnmatchedFiles := map[string]match{}
+
 	for _, potentialMatch := range potentialMatches {
 		fileOffset := int64(0)
 
@@ -102,7 +104,16 @@ func compareHashMultiFile(potentialMatches []match, torrent *multiFileTorrent) (
 			if fileMatches {
 				matches = append(matches, potentialMatch)
 			}
+		} else {
+			prevSmallMatch, found := smallUnmatchedFiles[potentialMatch.torrentPath]
+			if !found || prevSmallMatch.levDistance > potentialMatch.levDistance {
+				smallUnmatchedFiles[potentialMatch.torrentPath] = potentialMatch
+			}
 		}
+	}
+
+	for _, smallFileMatch := range smallUnmatchedFiles {
+		matches = append(matches, smallFileMatch)
 	}
 
 	return matches, nil

@@ -5,11 +5,27 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
+
+	"github.com/agnivade/levenshtein"
 )
 
 type match struct {
 	torrentPath string
 	file        node
+	levDistance int
+}
+
+type byLevDistance []match
+
+func (m byLevDistance) Len() int {
+	return len(m)
+}
+func (m byLevDistance) Swap(i, j int) {
+	m[i], m[j] = m[j], m[i]
+}
+func (m byLevDistance) Less(i, j int) bool {
+	return m[i].levDistance < m[j].levDistance
 }
 
 func handleMultiFileTorrent(torrent *multiFileTorrent, downloads []node, links string, maxMissing int64) bool {
@@ -22,12 +38,21 @@ func handleMultiFileTorrent(torrent *multiFileTorrent, downloads []node, links s
 
 		for _, file := range downloads {
 			if torrentFile.Length == file.info.Size() {
+				fullPath := filepath.Join(torrentFile.Path...)
+
 				potentialMatches = append(potentialMatches, match{
-					torrentPath: filepath.Join(torrentFile.Path...),
+					torrentPath: fullPath,
 					file:        file,
+					levDistance: levenshtein.ComputeDistance(file.info.Name(), filepath.Base(fullPath)),
 				})
 			}
 		}
+	}
+
+	sort.Sort(byLevDistance(potentialMatches))
+
+	if len(potentialMatches) > 11 {
+		potentialMatches = potentialMatches[:11]
 	}
 
 	matches, err := compareHashMultiFile(potentialMatches, torrent)
